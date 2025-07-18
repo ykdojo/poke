@@ -32,10 +32,14 @@ function displayPokemon() {
     const grid = document.getElementById('pokemon-grid');
     grid.innerHTML = '';
     
-    pokemonData.forEach(pokemon => {
+    pokemonData.forEach((pokemon, index) => {
         const card = createPokemonCard(pokemon);
+        card.setAttribute('data-index', index);
         grid.appendChild(card);
     });
+    
+    // Initialize minimap after displaying Pokemon
+    initializeMinimap();
 }
 
 // Create a Pokemon card element
@@ -158,6 +162,77 @@ function showPokemonDetail(pokemon) {
 function closePokemonDetail() {
     const detailView = document.getElementById('pokemon-detail');
     detailView.classList.add('hidden');
+}
+
+// Initialize minimap
+function initializeMinimap() {
+    const canvas = document.getElementById('minimap-canvas');
+    const ctx = canvas.getContext('2d');
+    const minimap = document.getElementById('minimap');
+    const viewport = document.querySelector('.minimap-viewport');
+    
+    // Set canvas size
+    canvas.width = 60;
+    canvas.height = 400;
+    
+    // Calculate dots per row based on canvas width
+    const dotsPerRow = 6;
+    const dotSize = 8;
+    const dotSpacing = 10;
+    const totalRows = Math.ceil(pokemonData.length / dotsPerRow);
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw dots for each Pokemon
+    pokemonData.forEach((pokemon, index) => {
+        const row = Math.floor(index / dotsPerRow);
+        const col = index % dotsPerRow;
+        const x = col * dotSpacing + 5;
+        const y = (row * 3) + 5; // Compressed vertical spacing
+        
+        // Get type color
+        const typeColors = {
+            normal: '#A8A878', fire: '#F08030', water: '#6890F0', electric: '#F8D030',
+            grass: '#78C850', ice: '#98D8D8', fighting: '#C03028', poison: '#A040A0',
+            ground: '#E0C068', flying: '#A890F0', psychic: '#F85888', bug: '#A8B820',
+            rock: '#B8A038', ghost: '#705898', dragon: '#7038F8', dark: '#705848',
+            steel: '#B8B8D0', fairy: '#EE99AC'
+        };
+        
+        const color = typeColors[pokemon.Type1.toLowerCase()] || '#999999';
+        
+        // Draw dot
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(x, y, 2, 0, Math.PI * 2);
+        ctx.fill();
+    });
+    
+    // Update viewport on scroll
+    function updateViewport() {
+        const container = document.querySelector('.container');
+        const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const scrollPercent = window.scrollY / scrollHeight;
+        const viewportHeight = (window.innerHeight / document.documentElement.scrollHeight) * canvas.height;
+        
+        viewport.style.height = Math.max(viewportHeight, 20) + 'px';
+        viewport.style.top = (10 + scrollPercent * (canvas.height - viewportHeight)) + 'px';
+    }
+    
+    // Click on minimap to jump
+    canvas.addEventListener('click', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const y = e.clientY - rect.top;
+        const percent = y / canvas.height;
+        const scrollTo = percent * (document.documentElement.scrollHeight - window.innerHeight);
+        window.scrollTo({ top: scrollTo, behavior: 'smooth' });
+    });
+    
+    // Update viewport on scroll
+    window.addEventListener('scroll', updateViewport);
+    window.addEventListener('resize', updateViewport);
+    updateViewport();
 }
 
 // Initialize when page loads

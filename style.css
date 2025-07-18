@@ -215,3 +215,35 @@ h1 {
     color: #999;
     font-size: 14px;
 }
+
+/* Minimap */
+.minimap {
+    position: fixed;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 80px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+    padding: 10px;
+    z-index: 100;
+}
+
+#minimap-canvas {
+    width: 60px;
+    height: 400px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.minimap-viewport {
+    position: absolute;
+    left: 10px;
+    width: 60px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 2px solid #333;
+    border-radius: 4px;
+    pointer-events: none;
+    transition: top 0.1s ease-out, height 0.1s ease-out;
+}
