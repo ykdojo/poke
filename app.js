@@ -171,43 +171,84 @@ function initializeMinimap() {
     const minimap = document.getElementById('minimap');
     const viewport = document.querySelector('.minimap-viewport');
     
-    // Set canvas size
-    canvas.width = 60;
-    canvas.height = 400;
+    // Set canvas size to match viewport height
+    const updateCanvasSize = () => {
+        const minmapContainer = document.getElementById('minimap');
+        const containerHeight = minmapContainer.clientHeight - 20; // Account for padding
+        canvas.width = 60;
+        canvas.height = containerHeight;
+        drawMinimap();
+    };
     
-    // Calculate dots per row based on canvas width
-    const dotsPerRow = 6;
-    const dotSize = 8;
-    const dotSpacing = 10;
-    const totalRows = Math.ceil(pokemonData.length / dotsPerRow);
+    // Draw the minimap dots
+    const drawMinimap = () => {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Calculate scaling to fit all Pokemon in the canvas height
+        const totalHeight = document.documentElement.scrollHeight;
+        const scale = canvas.height / totalHeight;
+        
+        // Calculate grid position for each Pokemon card
+        const grid = document.getElementById('pokemon-grid');
+        const cards = grid.children;
+        
+        // Detect actual grid columns from the layout
+        let gridColumns = 1;
+        if (cards.length > 1) {
+            const firstCardRect = cards[0].getBoundingClientRect();
+            let columnsFound = 1;
+            
+            // Count cards in the first row
+            for (let i = 1; i < cards.length; i++) {
+                const cardRect = cards[i].getBoundingClientRect();
+                if (Math.abs(cardRect.top - firstCardRect.top) < 5) {
+                    columnsFound++;
+                } else {
+                    break;
+                }
+            }
+            gridColumns = columnsFound;
+        }
+        
+        // Calculate spacing for minimap
+        const availableWidth = canvas.width - 10; // Leave some margin
+        const dotSpacing = availableWidth / gridColumns;
+        
+        pokemonData.forEach((pokemon, index) => {
+            if (index >= cards.length) return;
+            
+            const card = cards[index];
+            const cardRect = card.getBoundingClientRect();
+            const cardTop = cardRect.top + window.scrollY;
+            
+            // Scale position to minimap
+            const y = cardTop * scale;
+            
+            // Calculate column position based on actual grid
+            const col = index % gridColumns;
+            const x = col * dotSpacing + dotSpacing / 2 + 5;
+            
+            // Get type color
+            const typeColors = {
+                normal: '#A8A878', fire: '#F08030', water: '#6890F0', electric: '#F8D030',
+                grass: '#78C850', ice: '#98D8D8', fighting: '#C03028', poison: '#A040A0',
+                ground: '#E0C068', flying: '#A890F0', psychic: '#F85888', bug: '#A8B820',
+                rock: '#B8A038', ghost: '#705898', dragon: '#7038F8', dark: '#705848',
+                steel: '#B8B8D0', fairy: '#EE99AC'
+            };
+            
+            const color = typeColors[pokemon.Type1.toLowerCase()] || '#999999';
+            
+            // Draw dot
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x, y, 2, 0, Math.PI * 2);
+            ctx.fill();
+        });
+    };
     
-    // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // Draw dots for each Pokemon
-    pokemonData.forEach((pokemon, index) => {
-        const row = Math.floor(index / dotsPerRow);
-        const col = index % dotsPerRow;
-        const x = col * dotSpacing + 5;
-        const y = (row * 3) + 5; // Compressed vertical spacing
-        
-        // Get type color
-        const typeColors = {
-            normal: '#A8A878', fire: '#F08030', water: '#6890F0', electric: '#F8D030',
-            grass: '#78C850', ice: '#98D8D8', fighting: '#C03028', poison: '#A040A0',
-            ground: '#E0C068', flying: '#A890F0', psychic: '#F85888', bug: '#A8B820',
-            rock: '#B8A038', ghost: '#705898', dragon: '#7038F8', dark: '#705848',
-            steel: '#B8B8D0', fairy: '#EE99AC'
-        };
-        
-        const color = typeColors[pokemon.Type1.toLowerCase()] || '#999999';
-        
-        // Draw dot
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.arc(x, y, 2, 0, Math.PI * 2);
-        ctx.fill();
-    });
+    updateCanvasSize();
     
     // Update viewport on scroll
     function updateViewport() {
@@ -271,7 +312,10 @@ function initializeMinimap() {
     
     // Update viewport on scroll
     window.addEventListener('scroll', updateViewport);
-    window.addEventListener('resize', updateViewport);
+    window.addEventListener('resize', () => {
+        updateCanvasSize();
+        updateViewport();
+    });
     updateViewport();
 }
 

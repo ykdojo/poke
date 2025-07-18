@@ -220,19 +220,21 @@ h1 {
 .minimap {
     position: fixed;
     right: 20px;
-    top: 50%;
-    transform: translateY(-50%);
+    top: 20px;
+    bottom: 20px;
     width: 80px;
     background: rgba(255, 255, 255, 0.95);
     border-radius: 8px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
     padding: 10px;
     z-index: 100;
+    display: flex;
+    flex-direction: column;
 }
 
 #minimap-canvas {
     width: 60px;
-    height: 400px;
+    flex: 1;
     cursor: grab;
     border-radius: 4px;
 }
