@@ -233,8 +233,12 @@ h1 {
 #minimap-canvas {
     width: 60px;
     height: 400px;
-    cursor: pointer;
+    cursor: grab;
     border-radius: 4px;
+}
+
+#minimap-canvas:active {
+    cursor: grabbing;
 }
 
 .minimap-viewport {

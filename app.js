@@ -220,13 +220,22 @@ function initializeMinimap() {
         viewport.style.top = (10 + scrollPercent * (canvas.height - viewportHeight)) + 'px';
     }
     
-    // Click on minimap to jump
-    canvas.addEventListener('click', (e) => {
+    // Combined click-to-jump and drag functionality
+    canvas.addEventListener('mousedown', (e) => {
         const rect = canvas.getBoundingClientRect();
         const y = e.clientY - rect.top;
         const percent = y / canvas.height;
         const scrollTo = percent * (document.documentElement.scrollHeight - window.innerHeight);
-        window.scrollTo({ top: scrollTo, behavior: 'smooth' });
+        
+        // Jump to clicked position
+        window.scrollTo({ top: scrollTo, behavior: 'auto' });
+        
+        // Start dragging immediately
+        isDragging = true;
+        dragStartY = e.clientY;
+        dragStartScrollY = scrollTo;
+        viewport.classList.add('dragging');
+        e.preventDefault();
     });
     
     // Make viewport draggable
