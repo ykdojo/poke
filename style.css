@@ -95,3 +95,123 @@ h1 {
 .type-dark { background-color: #705848; }
 .type-steel { background-color: #B8B8D0; }
 .type-fairy { background-color: #EE99AC; }
+
+/* Detail view */
+.pokemon-detail {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.pokemon-detail.hidden {
+    display: none;
+}
+
+.detail-content {
+    background: white;
+    border-radius: 20px;
+    padding: 40px;
+    max-width: 900px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+.close-button {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: none;
+    border: none;
+    font-size: 30px;
+    cursor: pointer;
+    color: #666;
+}
+
+.close-button:hover {
+    color: #333;
+}
+
+.detail-header {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+.detail-image {
+    width: 200px;
+    height: 200px;
+    object-fit: contain;
+}
+
+.detail-info h2 {
+    font-size: 32px;
+    margin-bottom: 10px;
+}
+
+.detail-types {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.detail-types .type-badge {
+    font-size: 14px;
+    padding: 6px 16px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+}
+
+.stat-label {
+    font-weight: 600;
+    color: #666;
+}
+
+.similar-section {
+    margin-top: 40px;
+}
+
+.similar-section h3 {
+    font-size: 24px;
+    margin-bottom: 20px;
+    color: #2c3e50;
+}
+
+.similar-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+}
+
+.similar-placeholder {
+    background: #f0f0f0;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    font-size: 14px;
+}
