@@ -229,6 +229,37 @@ function initializeMinimap() {
         window.scrollTo({ top: scrollTo, behavior: 'smooth' });
     });
     
+    // Make viewport draggable
+    let isDragging = false;
+    let dragStartY = 0;
+    let dragStartScrollY = 0;
+    
+    viewport.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        dragStartY = e.clientY;
+        dragStartScrollY = window.scrollY;
+        viewport.classList.add('dragging');
+        e.preventDefault();
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        
+        const deltaY = e.clientY - dragStartY;
+        const canvasRect = canvas.getBoundingClientRect();
+        const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const scrollDelta = (deltaY / canvas.height) * scrollHeight;
+        
+        window.scrollTo({ top: dragStartScrollY + scrollDelta, behavior: 'auto' });
+    });
+    
+    document.addEventListener('mouseup', () => {
+        if (isDragging) {
+            isDragging = false;
+            viewport.classList.remove('dragging');
+        }
+    });
+    
     // Update viewport on scroll
     window.addEventListener('scroll', updateViewport);
     window.addEventListener('resize', updateViewport);

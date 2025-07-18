@@ -244,6 +244,11 @@ h1 {
     background: rgba(0, 0, 0, 0.2);
     border: 2px solid #333;
     border-radius: 4px;
-    pointer-events: none;
-    transition: top 0.1s ease-out, height 0.1s ease-out;
+    cursor: grab;
+    transition: height 0.1s ease-out;
+}
+
+.minimap-viewport.dragging {
+    cursor: grabbing;
+    background: rgba(0, 0, 0, 0.3);
 }
