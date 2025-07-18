@@ -27,14 +27,42 @@ function parseCSV(csvText) {
     });
 }
 
+// Generation boundaries
+const generationBoundaries = [
+    { gen: 1, start: 1, end: 151, name: 'Kanto' },
+    { gen: 2, start: 152, end: 251, name: 'Johto' },
+    { gen: 3, start: 252, end: 386, name: 'Hoenn' },
+    { gen: 4, start: 387, end: 493, name: 'Sinnoh' },
+    { gen: 5, start: 494, end: 649, name: 'Unova' },
+    { gen: 6, start: 650, end: 721, name: 'Kalos' },
+    { gen: 7, start: 722, end: 809, name: 'Alola' },
+    { gen: 8, start: 810, end: 905, name: 'Galar' },
+    { gen: 9, start: 906, end: 1025, name: 'Paldea' }
+];
+
 // Display Pokemon in grid
 function displayPokemon() {
     const grid = document.getElementById('pokemon-grid');
     grid.innerHTML = '';
     
+    let currentGen = 1;
+    
     pokemonData.forEach((pokemon, index) => {
+        const pokemonId = parseInt(pokemon.ID);
+        
+        // Check if we need to add a generation separator
+        const genBoundary = generationBoundaries.find(g => g.start === pokemonId);
+        if (genBoundary) {
+            const separator = document.createElement('div');
+            separator.className = 'generation-separator';
+            separator.innerHTML = `<span>Generation ${genBoundary.gen} - ${genBoundary.name}</span>`;
+            grid.appendChild(separator);
+            currentGen = genBoundary.gen;
+        }
+        
         const card = createPokemonCard(pokemon);
         card.setAttribute('data-index', index);
+        card.setAttribute('data-generation', currentGen);
         grid.appendChild(card);
     });
     
@@ -191,7 +219,8 @@ function initializeMinimap() {
         
         // Calculate grid position for each Pokemon card
         const grid = document.getElementById('pokemon-grid');
-        const cards = grid.children;
+        const allChildren = Array.from(grid.children);
+        const cards = allChildren.filter(child => child.classList.contains('pokemon-card'));
         
         // Detect actual grid columns from the layout
         let gridColumns = 1;
@@ -211,14 +240,21 @@ function initializeMinimap() {
             gridColumns = columnsFound;
         }
         
-        // Calculate spacing for minimap
-        const availableWidth = canvas.width - 10; // Leave some margin
-        const dotSpacing = availableWidth / gridColumns;
+        // Calculate spacing for minimap - tighter columns
+        const availableWidth = canvas.width - 20; // More margin for labels
+        const dotSpacing = availableWidth / gridColumns * 0.8; // Tighter spacing
         
-        pokemonData.forEach((pokemon, index) => {
-            if (index >= cards.length) return;
+        // Map Pokemon data to their corresponding cards
+        let cardIndex = 0;
+        pokemonData.forEach((pokemon, dataIndex) => {
+            if (cardIndex >= cards.length) return;
             
-            const card = cards[index];
+            const card = cards[cardIndex];
+            if (!card || !card.hasAttribute('data-index') || 
+                parseInt(card.getAttribute('data-index')) !== dataIndex) {
+                return;
+            }
+            
             const cardRect = card.getBoundingClientRect();
             const cardTop = cardRect.top + window.scrollY;
             
@@ -226,8 +262,8 @@ function initializeMinimap() {
             const y = cardTop * scale;
             
             // Calculate column position based on actual grid
-            const col = index % gridColumns;
-            const x = col * dotSpacing + dotSpacing / 2 + 5;
+            const col = cardIndex % gridColumns;
+            const x = col * dotSpacing + dotSpacing / 2 + 20; // Shift right for labels
             
             // Get type color
             const typeColors = {
@@ -245,6 +281,37 @@ function initializeMinimap() {
             ctx.beginPath();
             ctx.arc(x, y, 2, 0, Math.PI * 2);
             ctx.fill();
+            
+            cardIndex++;
+        });
+        
+        // Draw generation separators on minimap
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.font = '8px sans-serif';
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        
+        generationBoundaries.forEach((gen, index) => {
+            // Find the card for the start of this generation
+            const startIndex = pokemonData.findIndex(p => parseInt(p.ID) === gen.start);
+            if (startIndex >= 0 && startIndex < cards.length) {
+                const card = cards[startIndex];
+                const cardRect = card.getBoundingClientRect();
+                const cardTop = cardRect.top + window.scrollY;
+                const y = cardTop * scale;
+                
+                // Draw line (except for Gen 1)
+                if (index > 0) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(canvas.width, y);
+                    ctx.stroke();
+                }
+                
+                // Draw generation label
+                const labelY = index === 0 ? y + 10 : y + 10;
+                ctx.fillText(`G${gen.gen}`, 3, labelY); // Shortened to G1, G2, etc.
+            }
         });
     };
     
