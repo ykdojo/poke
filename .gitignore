@@ -10,7 +10,7 @@ env/
 
 # Generated data files
 *.parquet
-*.npy
+# *.npy  # Commented out to allow committing pre-generated embeddings
 
 # Test files
 test_*.py
