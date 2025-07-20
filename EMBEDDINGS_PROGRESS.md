@@ -75,12 +75,32 @@ class CLIPImageEncoder:
 4. Add progress tracking and error handling
 5. Consider batch size optimization for memory efficiency
 
+## Recent Progress (2025-07-20)
+
+### RGBA to RGB Conversion Verified
+- ✅ Examined Pokemon images - all have transparent backgrounds
+- ✅ Confirmed white background is optimal for conversion (matches typical display context)
+- ✅ Created `convert_to_rgb.py` script for batch conversion
+- ✅ Successfully converted all 1025 Pokemon images to RGB format
+- ✅ Verified conversion quality - colors preserved, no artifacts
+- ✅ Conversion matches PIL's standard RGBA→RGB behavior
+
+### Conversion Details
+The RGBA to RGB conversion formula used:
+```python
+# For each pixel:
+rgb = rgba[:3] * (alpha/255) + white_background * (1 - alpha/255)
+```
+This properly composites the image over white, handling transparency correctly.
+
 ## File Structure
 ```
 .
 ├── generate_embeddings_daft.py  # Main script (WIP)
+├── convert_to_rgb.py           # RGBA to RGB conversion script
 ├── requirements.txt             # Python dependencies
-├── pokemon_artwork/             # Image directory
+├── pokemon_artwork/             # Original RGBA images
+├── pokemon_artwork_rgb/         # Converted RGB images
 ├── *.parquet                   # Output files (gitignored)
 └── test_*.py                   # Test scripts (gitignored)
 ```
