@@ -104,3 +104,21 @@ This properly composites the image over white, handling transparency correctly.
 ├── *.parquet                   # Output files (gitignored)
 └── test_*.py                   # Test scripts (gitignored)
 ```
+
+## Latest Updates (2025-07-20)
+
+### Embeddings Script Updated
+- ✅ Modified `generate_embeddings_daft.py` to use pre-converted RGB images
+- ✅ Removed RGBA to RGB conversion logic from the UDF
+- ✅ Successfully tested single image embedding generation
+- ✅ Verified parquet output (3.8KB for single embedding)
+- ✅ Confirmed 512-dimensional float32 embeddings are generated correctly
+
+### Current Implementation Status
+The script now:
+1. Reads from `pokemon_artwork_rgb/` directory directly
+2. Processes images without conversion overhead
+3. Generates normalized CLIP embeddings
+4. Saves to parquet format successfully
+
+**Note**: Currently configured to process only 1 image for testing. Ready to scale to full dataset.
