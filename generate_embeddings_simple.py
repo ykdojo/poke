@@ -58,11 +58,16 @@ def generate_pokemon_embeddings():
     
     print("Creating Pokemon dataframe...")
     
-    # Start with just 1 image for debugging
+    # Generate data for all 1025 Pokemon
+    pokemon_ids = list(range(1, 1026))  # 1 to 1025
+    image_paths = [f"pokemon_artwork_rgb/{pid:04d}.png" for pid in pokemon_ids]
+    
     pokemon_data = {
-        "pokemon_id": [1],
-        "image_path": ["pokemon_artwork_rgb/0001.png"]
+        "pokemon_id": pokemon_ids,
+        "image_path": image_paths
     }
+    
+    print(f"Processing {len(pokemon_ids)} Pokemon images...")
     
     df = daft.from_pydict(pokemon_data)
     
@@ -86,6 +91,7 @@ def generate_pokemon_embeddings():
     df = df.select("pokemon_id", "embedding")
     
     print("\nCollecting results...")
+    print("This may take a few minutes for all 1025 Pokemon...")
     try:
         # Collect the results
         results = df.collect()
