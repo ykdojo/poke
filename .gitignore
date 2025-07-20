@@ -1,1 +1,15 @@
 .DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# Generated data files
+*.parquet
+
+# Test files
+test_*.py

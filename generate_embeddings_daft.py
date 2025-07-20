@@ -9,15 +9,21 @@ from daft import col
 @daft.udf(return_dtype=daft.DataType.embedding(daft.DataType.float32(), 512))
 class CLIPImageEncoder:
     def __init__(self):
-        from transformers import CLIPModel, CLIPProcessor
-        import torch
-        
-        # Initialize CLIP model once per process
-        self.model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
-        self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.model.to(self.device)
-        self.model.eval()
+        try:
+            from transformers import CLIPProcessor, CLIPModel
+            import torch
+            
+            # Initialize CLIP model once per process
+            self.model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
+            self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+            self.device = "cuda" if torch.cuda.is_available() else "cpu"
+            self.model.to(self.device)
+            self.model.eval()
+        except Exception as e:
+            print(f"Error in UDF __init__: {e}")
+            import traceback
+            traceback.print_exc()
+            raise
     
     def __call__(self, images):
         import torch
@@ -27,9 +33,20 @@ class CLIPImageEncoder:
         embeddings = []
         
         for img_array in images.to_pylist():
-            # Handle both numpy arrays and PIL Images
+            # Handle numpy arrays - convert RGBA to RGB if needed
             if isinstance(img_array, np.ndarray):
-                pil_image = Image.fromarray(img_array)
+                # If RGBA (4 channels), convert to RGB
+                if img_array.shape[-1] == 4:
+                    # Create RGB image and composite alpha channel over white background
+                    rgb_array = img_array[:, :, :3]
+                    alpha = img_array[:, :, 3] / 255.0
+                    # Composite over white background
+                    white_bg = np.ones_like(rgb_array) * 255
+                    rgb_array = (rgb_array * alpha[:, :, np.newaxis] + 
+                                white_bg * (1 - alpha[:, :, np.newaxis])).astype(np.uint8)
+                    pil_image = Image.fromarray(rgb_array)
+                else:
+                    pil_image = Image.fromarray(img_array)
             else:
                 pil_image = img_array
             
@@ -53,9 +70,10 @@ def generate_pokemon_embeddings():
     print("Creating Pokemon dataframe...")
     
     # Create initial dataframe with Pokemon IDs and image paths
+    # Start with just 1 image for debugging
     pokemon_data = {
-        "pokemon_id": list(range(1, 1026)),
-        "image_path": [f"pokemon_artwork/{str(i).zfill(4)}.png" for i in range(1, 1026)]
+        "pokemon_id": [1],
+        "image_path": ["pokemon_artwork/0001.png"]
     }
     
     df = daft.from_pydict(pokemon_data)
@@ -73,7 +91,7 @@ def generate_pokemon_embeddings():
     # Generate CLIP embeddings
     df = df.with_column(
         "embedding",
-        CLIPImageEncoder()(col("image"))
+        CLIPImageEncoder(col("image"))
     )
     
     # Select only the columns we need
