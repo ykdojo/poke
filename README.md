@@ -63,7 +63,6 @@ python test_parquet_issue.py 100  # ✅ Works
 python test_parquet_issue.py 1025 # ❌ ImportError in worker processes
 ```
 
-For detailed findings and troubleshooting, see `EMBEDDINGS_PROGRESS.md`.
 
 ## Sources
 - Images: [PokeAPI/sprites](https://github.com/PokeAPI/sprites)
