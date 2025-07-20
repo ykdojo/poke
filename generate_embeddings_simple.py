@@ -5,53 +5,61 @@ Generate CLIP embeddings for Pokemon images - simple version without Daft write 
 import daft
 from daft import col
 import numpy as np
+import torch
+from PIL import Image
+from transformers import CLIPProcessor, CLIPModel
 
 @daft.udf(return_dtype=daft.DataType.embedding(daft.DataType.float32(), 512))
 class CLIPImageEncoder:
     def __init__(self):
+        # Initialize CLIP model once per process
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        
+        # Force model to load on CPU (not meta device)
+        with torch.device("cpu"):
+            self.model = CLIPModel.from_pretrained(
+                "openai/clip-vit-base-patch32",
+                torch_dtype=torch.float32,
+                device_map=None,  # Prevent device_map auto
+                low_cpu_mem_usage=False  # Force full load
+            )
+        
+        self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+        
+        # Move to target device if needed
+        if self.device != "cpu":
+            self.model = self.model.to(self.device)
+        self.model.eval()
+    
+    def __call__(self, images):
         try:
-            from transformers import CLIPProcessor, CLIPModel
-            import torch
+            embeddings = []
             
-            # Initialize CLIP model once per process
-            self.model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
-            self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
-            self.device = "cuda" if torch.cuda.is_available() else "cpu"
-            self.model.to(self.device)
-            self.model.eval()
+            for img_array in images.to_pylist():
+                # Handle numpy arrays - images are already RGB
+                if isinstance(img_array, np.ndarray):
+                    pil_image = Image.fromarray(img_array)
+                else:
+                    pil_image = img_array
+                
+                # Process with CLIP
+                inputs = self.processor(images=pil_image, return_tensors="pt")
+                inputs = {k: v.to(self.device) for k, v in inputs.items()}
+                
+                with torch.no_grad():
+                    image_features = self.model.get_image_features(**inputs)
+                    # Normalize embeddings (CLIP standard practice)
+                    image_features = image_features / image_features.norm(dim=-1, keepdim=True)
+                    embedding = image_features.cpu().numpy().squeeze()
+                
+                embeddings.append(embedding)
+            
+            return embeddings
         except Exception as e:
-            print(f"Error in UDF __init__: {e}")
+            print(f"Error in UDF __call__: {e}")
             import traceback
             traceback.print_exc()
             raise
-    
-    def __call__(self, images):
-        import torch
-        from PIL import Image
-        import numpy as np
-        
-        embeddings = []
-        
-        for img_array in images.to_pylist():
-            # Handle numpy arrays - images are already RGB
-            if isinstance(img_array, np.ndarray):
-                pil_image = Image.fromarray(img_array)
-            else:
-                pil_image = img_array
-            
-            # Process with CLIP
-            inputs = self.processor(images=pil_image, return_tensors="pt")
-            inputs = {k: v.to(self.device) for k, v in inputs.items()}
-            
-            with torch.no_grad():
-                image_features = self.model.get_image_features(**inputs)
-                # Normalize embeddings (CLIP standard practice)
-                image_features = image_features / image_features.norm(dim=-1, keepdim=True)
-                embedding = image_features.cpu().numpy().squeeze()
-            
-            embeddings.append(embedding)
-        
-        return embeddings
 
 def generate_pokemon_embeddings():
     """Generate embeddings for Pokemon artwork"""

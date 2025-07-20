@@ -192,3 +192,28 @@ For frontend integration:
 3. Since embeddings are normalized, cosine similarity = simple dot product
 
 The embeddings are production-ready and successfully capture visual similarity between Pokemon!
+
+## Daft Integration Challenges (2025-07-20)
+
+### Issue Discovered
+While attempting to use Daft for distributed processing of embeddings:
+- ✅ **Small datasets work** (≤100 Pokemon) - processed in main process
+- ❌ **Large datasets fail** (≥500 Pokemon) - worker processes encounter issues
+
+### Root Cause Analysis
+1. **Initial error**: Import errors in worker processes (`ImportError: cannot import name 'CLIPProcessor'`)
+2. **After module-level imports**: Meta tensor device errors (`Tensor on device cpu is not on the expected device meta!`)
+3. **Core issue**: Daft's multiprocessing doesn't handle transformers' model loading properly
+   - Transformers uses lazy loading with meta tensors for memory efficiency
+   - These meta tensors break when accessed in Daft's worker processes
+
+### Attempted Solutions
+1. ✅ Module-level imports (following Daft's text-to-image tutorial pattern)
+2. ❌ Force CPU device loading with various parameters
+3. ❌ Lazy initialization in `__call__` method
+4. ❌ Testing with both uv and pip (not a package manager issue)
+
+### Conclusion
+- The issue is a fundamental incompatibility between Daft's multiprocessing and transformers' model loading
+- `generate_embeddings_batch.py` successfully processes all Pokemon without Daft
+- For production use, the batch processing approach is recommended until Daft/transformers compatibility improves
