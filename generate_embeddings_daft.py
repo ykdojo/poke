@@ -33,20 +33,9 @@ class CLIPImageEncoder:
         embeddings = []
         
         for img_array in images.to_pylist():
-            # Handle numpy arrays - convert RGBA to RGB if needed
+            # Handle numpy arrays - images are already RGB
             if isinstance(img_array, np.ndarray):
-                # If RGBA (4 channels), convert to RGB
-                if img_array.shape[-1] == 4:
-                    # Create RGB image and composite alpha channel over white background
-                    rgb_array = img_array[:, :, :3]
-                    alpha = img_array[:, :, 3] / 255.0
-                    # Composite over white background
-                    white_bg = np.ones_like(rgb_array) * 255
-                    rgb_array = (rgb_array * alpha[:, :, np.newaxis] + 
-                                white_bg * (1 - alpha[:, :, np.newaxis])).astype(np.uint8)
-                    pil_image = Image.fromarray(rgb_array)
-                else:
-                    pil_image = Image.fromarray(img_array)
+                pil_image = Image.fromarray(img_array)
             else:
                 pil_image = img_array
             
@@ -73,7 +62,7 @@ def generate_pokemon_embeddings():
     # Start with just 1 image for debugging
     pokemon_data = {
         "pokemon_id": [1],
-        "image_path": ["pokemon_artwork/0001.png"]
+        "image_path": ["pokemon_artwork_rgb/0001.png"]
     }
     
     df = daft.from_pydict(pokemon_data)
@@ -89,17 +78,23 @@ def generate_pokemon_embeddings():
     print("Generating CLIP embeddings...")
     
     # Generate CLIP embeddings
+    print("Applying CLIPImageEncoder UDF...")
     df = df.with_column(
         "embedding",
         CLIPImageEncoder(col("image"))
     )
+    print("UDF applied successfully")
     
     # Select only the columns we need
     df = df.select("pokemon_id", "embedding")
     
+    # Test: show the dataframe before saving
+    print("\nDataframe preview:")
+    df.show(1)
+    
     # Save as parquet
     output_path = "pokemon_embeddings.parquet"
-    print(f"Saving embeddings to {output_path}...")
+    print(f"\nSaving embeddings to {output_path}...")
     
     df.write_parquet(output_path)
     
