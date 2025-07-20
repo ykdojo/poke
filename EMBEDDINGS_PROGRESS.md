@@ -212,8 +212,36 @@ While attempting to use Daft for distributed processing of embeddings:
 2. ❌ Force CPU device loading with various parameters
 3. ❌ Lazy initialization in `__call__` method
 4. ❌ Testing with both uv and pip (not a package manager issue)
+5. ✅ **Switching to sentence-transformers** - Model loads successfully but still fails at scale
+   - sentence-transformers wrapper for CLIP downloads and loads correctly
+   - Same multiprocessing issues occur with larger datasets
+
+### Working Implementation
+Created `daft_embeddings_100_working.py` which successfully:
+- Uses `daft.DataType.python()` instead of `daft.DataType.embedding()` 
+- Processes 100 images in ~7 seconds
+- Generates normalized 512-dimensional CLIP embeddings
+- Saves output as NPY format for easy loading
+
+### NPY Storage Format
+The embeddings are stored as numpy arrays (`.npy` files) because:
+- **Efficient**: Binary format, smaller file size (2MB for 1025 embeddings)
+- **Simple**: Direct `np.save()` and `np.load()` without serialization issues
+- **Compatible**: Works seamlessly with ML libraries and web frameworks
+- **Fast**: No parsing overhead, direct memory mapping possible
+
+Example usage:
+```python
+# Save embeddings
+embeddings_array = np.array(embeddings_list, dtype=np.float32)
+np.save("pokemon_embeddings.npy", embeddings_array)
+
+# Load embeddings
+embeddings = np.load("pokemon_embeddings.npy")
+# Access Pokemon #25 (Pikachu) embedding: embeddings[24]
+```
 
 ### Conclusion
 - The issue is a fundamental incompatibility between Daft's multiprocessing and transformers' model loading
-- `generate_embeddings_batch.py` successfully processes all Pokemon without Daft
-- For production use, the batch processing approach is recommended until Daft/transformers compatibility improves
+- Works perfectly for small datasets where Daft doesn't spawn worker processes
+- For production use with all 1025 Pokemon, batch processing without Daft is recommended
