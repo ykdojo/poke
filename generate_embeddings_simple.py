@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Generate CLIP embeddings for all Pokemon images using Daft
-Saves only as Parquet format
+Generate CLIP embeddings for Pokemon images - simple version without Daft write issues
 """
 import daft
 from daft import col
+import numpy as np
 
 @daft.udf(return_dtype=daft.DataType.embedding(daft.DataType.float32(), 512))
 class CLIPImageEncoder:
@@ -54,11 +54,10 @@ class CLIPImageEncoder:
         return embeddings
 
 def generate_pokemon_embeddings():
-    """Generate embeddings for all Pokemon artwork"""
+    """Generate embeddings for Pokemon artwork"""
     
     print("Creating Pokemon dataframe...")
     
-    # Create initial dataframe with Pokemon IDs and image paths
     # Start with just 1 image for debugging
     pokemon_data = {
         "pokemon_id": [1],
@@ -78,63 +77,47 @@ def generate_pokemon_embeddings():
     print("Generating CLIP embeddings...")
     
     # Generate CLIP embeddings
-    print("Applying CLIPImageEncoder UDF...")
     df = df.with_column(
         "embedding",
         CLIPImageEncoder(col("image"))
     )
-    print("UDF applied successfully")
     
     # Select only the columns we need
     df = df.select("pokemon_id", "embedding")
     
-    # Test: show the dataframe before saving
-    print("\nDataframe preview:")
-    df.show(1)
-    
-    # Save as parquet
-    output_path = "pokemon_embeddings.parquet"
-    print(f"\nSaving embeddings to {output_path}...")
-    
-    # First, let's collect and examine the data
-    print("Collecting data to check if embeddings were generated...")
+    print("\nCollecting results...")
     try:
-        collected = df.collect()
-        print(f"Successfully collected {len(collected)} rows")
+        # Collect the results
+        results = df.collect()
+        print(f"Successfully collected {len(results)} rows")
         
-        # Check the first row
-        if len(collected) > 0:
-            first_row = collected[0]
-            print(f"First row pokemon_id: {first_row['pokemon_id']}")
-            print(f"Embedding shape: {first_row['embedding'].shape if hasattr(first_row['embedding'], 'shape') else 'N/A'}")
-            print(f"Embedding type: {type(first_row['embedding'])}")
-            print(f"First 5 values: {first_row['embedding'][:5] if hasattr(first_row['embedding'], '__getitem__') else 'Cannot access'}")
+        # Save as numpy arrays instead
+        embeddings_list = []
+        ids_list = []
+        
+        for row in results:
+            ids_list.append(row["pokemon_id"])
+            embeddings_list.append(row["embedding"])
+        
+        # Convert to numpy arrays
+        ids_array = np.array(ids_list)
+        embeddings_array = np.array(embeddings_list)
+        
+        print(f"\nEmbeddings array shape: {embeddings_array.shape}")
+        print(f"IDs array shape: {ids_array.shape}")
+        
+        # Save as numpy files
+        np.save("pokemon_ids.npy", ids_array)
+        np.save("pokemon_embeddings.npy", embeddings_array)
+        
+        print(f"\n✅ Saved embeddings to:")
+        print(f"  - pokemon_ids.npy")
+        print(f"  - pokemon_embeddings.npy")
+        
     except Exception as e:
-        print(f"ERROR during collect: {e}")
+        print(f"\n❌ Error during processing: {e}")
         import traceback
         traceback.print_exc()
-    
-    print("\nAttempting to write parquet...")
-    try:
-        df.write_parquet(output_path)
-        print(f"✅ Embeddings saved to {output_path}")
-    except Exception as e:
-        print(f"ERROR during write_parquet: {e}")
-        import traceback
-        traceback.print_exc()
-    
-    # Print file size
-    import os
-    if os.path.exists(output_path):
-        if os.path.isfile(output_path):
-            file_size = os.path.getsize(output_path) / 1024 / 1024
-            print(f"File size: {file_size:.2f} MB")
-        elif os.path.isdir(output_path):
-            print(f"Output is a directory. Contents:")
-            for item in os.listdir(output_path):
-                print(f"  - {item}")
-    else:
-        print(f"ERROR: {output_path} does not exist!")
 
 if __name__ == "__main__":
     generate_pokemon_embeddings()

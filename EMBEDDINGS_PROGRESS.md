@@ -96,12 +96,15 @@ This properly composites the image over white, handling transparency correctly.
 ## File Structure
 ```
 .
-├── generate_embeddings_daft.py  # Main script (WIP)
+├── generate_embeddings_daft.py  # Main script (has parquet write issue)
+├── generate_embeddings_simple.py # Working version using numpy save
+├── test_simple_embedding.py     # Test script for single embedding
 ├── convert_to_rgb.py           # RGBA to RGB conversion script
 ├── requirements.txt             # Python dependencies
 ├── pokemon_artwork/             # Original RGBA images
 ├── pokemon_artwork_rgb/         # Converted RGB images
 ├── *.parquet                   # Output files (gitignored)
+├── *.npy                       # Numpy arrays (gitignored)
 └── test_*.py                   # Test scripts (gitignored)
 ```
 
@@ -122,3 +125,34 @@ The script now:
 4. Saves to parquet format successfully
 
 **Note**: Currently configured to process only 1 image for testing. Ready to scale to full dataset.
+
+## Latest Updates (2025-07-20) - Parquet Write Issue
+
+### Issue Discovered
+- ✅ Embedding generation works perfectly - successfully generated 512-dimensional CLIP embeddings
+- ❌ Daft's `write_parquet()` hangs indefinitely when trying to save embeddings
+- ✅ The issue is specifically with parquet writing, not with the embedding generation itself
+
+### Debugging Process
+1. Tested with both 1 and 10 images - same hanging behavior
+2. Created `test_simple_embedding.py` to verify CLIP model works correctly (it does)
+3. Created `generate_embeddings_simple.py` using `collect()` + numpy save as workaround
+4. Successfully generated and saved embeddings as .npy files
+
+### Root Cause
+The crash/hang occurs specifically when Daft tries to write the embedding datatype to parquet format. This appears to be either:
+- A Daft bug with handling embedding datatypes in parquet writer
+- A configuration issue with how embeddings are serialized to parquet
+
+### Workaround
+Using `df.collect()` to gather results and saving as numpy arrays works perfectly:
+```python
+results = df.collect()
+embeddings_array = np.array([row["embedding"] for row in results])
+np.save("pokemon_embeddings.npy", embeddings_array)
+```
+
+### Next Steps
+- Consider using alternative formats (Arrow, CSV with base64 encoding, or HDF5)
+- Report issue to Daft maintainers
+- For now, numpy arrays work as a simple solution

@@ -10,6 +10,7 @@ env/
 
 # Generated data files
 *.parquet
+*.npy
 
 # Test files
 test_*.py
