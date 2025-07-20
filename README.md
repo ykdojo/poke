@@ -52,6 +52,17 @@ This project includes experiments with generating CLIP embeddings for Pokemon im
 - ❌ Fails with larger datasets (≥500 images) due to multiprocessing issues
 - Root cause: Incompatibility between Daft's multiprocessing and transformers' model loading
 
+### Testing the Issue
+To reproduce the Daft multiprocessing issue:
+```bash
+# Works fine with small datasets
+python test_parquet_issue.py 10   # ✅ Works
+python test_parquet_issue.py 100  # ✅ Works
+
+# Fails with larger datasets
+python test_parquet_issue.py 1025 # ❌ ImportError in worker processes
+```
+
 For detailed findings and troubleshooting, see `EMBEDDINGS_PROGRESS.md`.
 
 ## Sources
