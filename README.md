@@ -65,12 +65,12 @@ python3 serve.py
 
 ## Pokemon Embeddings with Daft
 
-This project demonstrates generating CLIP embeddings for Pokemon images using Daft, a distributed dataframe library. We encountered and solved interesting multiprocessing challenges that provide insights into how Daft handles user-defined functions (UDFs) at scale.
+This project demonstrates generating CLIP embeddings for Pokemon images using Daft, a distributed dataframe library. I encountered and solved interesting multiprocessing challenges that provide insights into how Daft handles user-defined functions (UDFs) at scale.
 
 ### The Journey: Debugging Daft's Multiprocessing
 
 #### Initial Problem
-We wanted to generate CLIP embeddings for 1025 Pokemon images using Daft's UDF feature. The initial implementation failed with mysterious errors when processing more than ~100 images.
+I wanted to generate CLIP embeddings for 1025 Pokemon images using Daft's UDF feature. The initial implementation failed with mysterious errors when processing more than ~100 images.
 
 #### Investigation Process
 
@@ -82,7 +82,7 @@ We wanted to generate CLIP embeddings for 1025 Pokemon images using Daft's UDF f
 
 4. **Deeper Investigation** ([commit 1da7f8d](../../commit/1da7f8d)): Implemented lazy loading and CPU-only inference, which pushed the threshold to 430 images but still failed on larger datasets.
 
-5. **Root Cause Discovery**: Through detailed debugging, we discovered that Daft creates multiple UDF instances when processing larger datasets. These instances were trying to load the CLIP model simultaneously, causing race conditions in the transformers library.
+5. **Root Cause Discovery**: Through detailed debugging, I discovered that Daft creates multiple UDF instances when processing larger datasets. These instances were trying to load the CLIP model simultaneously, causing race conditions in the transformers library.
 
 6. **Final Solution** ([commit 8e7411f](../../commit/8e7411f)): Implemented thread-safe model loading with a global cache, successfully processing all 1025 images.
 
@@ -90,7 +90,7 @@ We wanted to generate CLIP embeddings for 1025 Pokemon images using Daft's UDF f
 
 The issue was that when Daft scales up processing, it creates multiple UDF instances that can run in parallel threads within the same process. If these instances try to initialize heavy ML models simultaneously, it causes race conditions.
 
-Our solution uses a thread-safe global model cache that ensures only one model is loaded per process, regardless of how many UDF instances Daft creates.
+My solution uses a thread-safe global model cache that ensures only one model is loaded per process, regardless of how many UDF instances Daft creates.
 
 [View the final working code →](generate_embeddings_daft_fixed.py)
 
