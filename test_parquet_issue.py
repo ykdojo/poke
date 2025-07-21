@@ -3,15 +3,17 @@
 Reproduce the Daft write_parquet() issue with CLIP embeddings.
 Based on the original generate_embeddings_daft.py that exhibited the problem.
 """
+import sys
 import daft
 from daft import col
+import torch
+from transformers import CLIPProcessor, CLIPModel
+from PIL import Image
+import numpy as np
 
 @daft.udf(return_dtype=daft.DataType.embedding(daft.DataType.float32(), 512))
 class CLIPImageEncoder:
     def __init__(self):
-        from transformers import CLIPProcessor, CLIPModel
-        import torch
-        
         self.model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
         self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -19,10 +21,6 @@ class CLIPImageEncoder:
         self.model.eval()
     
     def __call__(self, images):
-        import torch
-        from PIL import Image
-        import numpy as np
-        
         embeddings = []
         
         for img_array in images.to_pylist():
@@ -39,9 +37,6 @@ class CLIPImageEncoder:
             embeddings.append(embedding)
         
         return embeddings
-
-# Test with different dataset sizes
-import sys
 
 # Get number of images from command line, default to 10
 num_images = int(sys.argv[1]) if len(sys.argv) > 1 else 10

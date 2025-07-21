@@ -48,24 +48,25 @@ python3 serve.py
 This project includes experiments with generating CLIP embeddings for Pokemon images using Daft.
 
 ### Key Findings
-- ✅ Successfully generates CLIP embeddings for small datasets (≤100 images)
-- ❌ Fails when processing exactly 1025 images with "Too many open files" error
+- ✅ Successfully generates CLIP embeddings for datasets up to 406 images
+- ❌ Fails when processing 407 or more images
+- **Exact threshold: Works with 406, fails with 407**
 
 ### The Error
-When processing 1025 images, the script fails with:
+When processing more than 406 images, the script fails with a meta tensor error in worker processes:
 ```
-daft.exceptions.DaftCoreException: DaftError::External Unable to open file pokemon_artwork_rgb/0553.png: Os { code: 24, kind: Uncategorized, message: "Too many open files" }
+NotImplementedError: Cannot copy out of meta tensor; no data! Please use torch.nn.Module.to_empty() instead of torch.nn.Module.to() when moving module from meta to a different device.
 ```
 
-The error occurs during `df.write_parquet()` when Daft's native executor attempts to open image file #553. The failure at exactly 1025 images suggests hitting a file descriptor limit.
+This error occurs because transformers uses "meta" tensors (tensors without actual data) for memory efficiency during model loading, but these can't be properly moved to devices in Daft's worker processes.
 
 ### Testing the Issue
 ```bash
-# Works with 100 images
-python test_parquet_issue.py 100  # ✅ Works
+# Works with up to 406 images
+python test_parquet_issue.py 406  # ✅ Works (~11 seconds)
 
-# Fails at 1025 images
-python test_parquet_issue.py 1025 # ❌ "Too many open files" error
+# Fails starting at 407 images
+python test_parquet_issue.py 407  # ❌ Meta tensor error in worker processes
 ```
 
 
