@@ -46,7 +46,7 @@ python3 serve.py
 - `pokemon_data.csv` - Pokemon metadata (names, types, stats)
 - `pokemon_embeddings.npy` - Computed CLIP embeddings for all 1025 Pokemon (~11MB)
 - `pokemon_artwork/` - Original artwork (475x475 RGBA PNG format, 1025 images)
-- `pokemon_artwork_rgb/` - RGB-converted images optimized for CLIP processing
+- `pokemon_artwork_rgb/` - RGB-converted images with white background
 
 ### Web Interface
 - `index.html` - Main web interface with Pokemon browser and search
