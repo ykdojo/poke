@@ -41,11 +41,27 @@ python3 serve.py
 ```
 
 ## Project Structure
-- `pokemon_artwork/` - Original artwork (475x475 RGBA PNG)
-- `pokemon_artwork_rgb/` - RGB-converted images for CLIP processing
-- `pokemon_data.csv` - Names, types, stats
-- `requirements.txt` - Python dependencies
-- `convert_to_rgb.py` - Utility to convert RGBA images to RGB
+
+### Data Files
+- `pokemon_data.csv` - Pokemon metadata (names, types, stats)
+- `pokemon_embeddings.npy` - Pre-computed CLIP embeddings for all 1025 Pokemon (~11MB)
+- `pokemon_artwork/` - Original artwork (475x475 RGBA PNG format, 1025 images)
+- `pokemon_artwork_rgb/` - RGB-converted images optimized for CLIP processing
+
+### Web Interface
+- `index.html` - Main web interface with Pokemon browser and search
+- `app.js` - Core JavaScript logic for browsing, filtering, and displaying Pokemon
+- `similarity.js` - Visual similarity search implementation using CLIP embeddings
+- `style.css` - Styling for the web interface
+
+### Python Scripts
+- `serve.py` - Simple HTTP server to host the web interface
+- `convert_to_rgb.py` - Utility script to convert RGBA images to RGB format
+- `generate_embeddings_daft_fixed.py` - Daft-based CLIP embedding generator with thread-safe model loading
+
+### Configuration
+- `requirements.txt` - Python dependencies (transformers, daft, numpy, Pillow, etc.)
+- `LICENSE` - Project license
 
 ## Pokemon Embeddings with Daft
 
