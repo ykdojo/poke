@@ -49,18 +49,23 @@ This project includes experiments with generating CLIP embeddings for Pokemon im
 
 ### Key Findings
 - ✅ Successfully generates CLIP embeddings for small datasets (≤100 images)
-- ❌ Fails with larger datasets (≥500 images) due to multiprocessing issues
-- Root cause: Incompatibility between Daft's multiprocessing and transformers' model loading
+- ❌ Fails when processing exactly 1025 images with "Too many open files" error
+
+### The Error
+When processing 1025 images, the script fails with:
+```
+daft.exceptions.DaftCoreException: DaftError::External Unable to open file pokemon_artwork_rgb/0553.png: Os { code: 24, kind: Uncategorized, message: "Too many open files" }
+```
+
+The error occurs during `df.write_parquet()` when Daft's native executor attempts to open image file #553. The failure at exactly 1025 images suggests hitting a file descriptor limit.
 
 ### Testing the Issue
-To reproduce the Daft multiprocessing issue:
 ```bash
-# Works fine with small datasets
-python test_parquet_issue.py 10   # ✅ Works
+# Works with 100 images
 python test_parquet_issue.py 100  # ✅ Works
 
-# Fails with larger datasets
-python test_parquet_issue.py 1025 # ❌ ImportError in worker processes
+# Fails at 1025 images
+python test_parquet_issue.py 1025 # ❌ "Too many open files" error
 ```
 
 
