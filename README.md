@@ -4,7 +4,7 @@ Interactive Pokemon browser with all 1025 Pokemon, featuring visual similarity s
 
 ## Important Note
 
-The visual similarity feature loads ~11MB of data on first visit, which may take 5-10 seconds on average connections. This data is cached after the first load.
+The visual similarity feature loads ~11MB of data on first visit, which may take some time. This data is cached after the first load.
 
 ## Setup
 
