@@ -2,6 +2,10 @@
 
 Interactive Pokemon browser with all 1025 Pokemon, featuring visual similarity search powered by CLIP embeddings.
 
+## Important Note
+
+The visual similarity feature loads ~11MB of data on first visit, which may take 5-10 seconds on average connections. This data is cached after the first load.
+
 ## Setup
 
 ### Using UV (Recommended - faster for ML dependencies)

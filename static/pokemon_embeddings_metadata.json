@@ -1,0 +1,5 @@
+{
+  "count": 1025,
+  "dimensions": 512,
+  "description": "CLIP embeddings for Pokemon images. Access via: embeddings[pokemonId - 1]"
+}

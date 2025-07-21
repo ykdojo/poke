@@ -301,8 +301,15 @@ body {
 
 .similar-section h3 {
     font-size: 24px;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     color: #2c3e50;
+}
+
+.similarity-note {
+    font-size: 14px;
+    color: #7f8c8d;
+    font-style: italic;
+    margin-bottom: 20px;
 }
 
 .similar-grid {
@@ -322,6 +329,48 @@ body {
     justify-content: center;
     color: #999;
     font-size: 14px;
+}
+
+.similar-card {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 15px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.similar-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: #3498db;
+}
+
+.similar-card img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.similar-name {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+.similarity-score {
+    font-size: 14px;
+    color: #7f8c8d;
+}
+
+.loading-message {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 40px;
+    color: #7f8c8d;
+    font-style: italic;
 }
 
 /* Minimap */

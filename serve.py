@@ -10,8 +10,11 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Origin', '*')
         super().end_headers()
 
+class ReuseAddrTCPServer(socketserver.TCPServer):
+    allow_reuse_address = True
+
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-with socketserver.TCPServer(("", PORT), MyHTTPRequestHandler) as httpd:
+with ReuseAddrTCPServer(("", PORT), MyHTTPRequestHandler) as httpd:
     print(f"Server running at http://localhost:{PORT}/")
     httpd.serve_forever()

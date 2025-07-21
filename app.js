@@ -163,14 +163,10 @@ function showPokemonDetail(pokemon) {
             </div>
             
             <div class="similar-section">
-                <h3>Similar Pokemon</h3>
-                <div class="similar-grid">
-                    <div class="similar-placeholder">Similar Pokemon #1<br>(Coming Soon)</div>
-                    <div class="similar-placeholder">Similar Pokemon #2<br>(Coming Soon)</div>
-                    <div class="similar-placeholder">Similar Pokemon #3<br>(Coming Soon)</div>
-                    <div class="similar-placeholder">Similar Pokemon #4<br>(Coming Soon)</div>
-                    <div class="similar-placeholder">Similar Pokemon #5<br>(Coming Soon)</div>
-                    <div class="similar-placeholder">Similar Pokemon #6<br>(Coming Soon)</div>
+                <h3>Visually Similar Pokemon</h3>
+                <p class="similarity-note">Based on artwork appearance only - not stats, types, or abilities</p>
+                <div class="similar-grid" id="similar-grid">
+                    <!-- Similar Pokemon will be populated here -->
                 </div>
             </div>
         </div>
@@ -178,11 +174,58 @@ function showPokemonDetail(pokemon) {
     
     detailView.classList.remove('hidden');
     
+    // Load similar Pokemon
+    loadSimilarPokemon(parseInt(pokemon.ID));
+    
     // Close on background click
     detailView.addEventListener('click', (e) => {
         if (e.target === detailView) {
             closePokemonDetail();
         }
+    });
+}
+
+// Load and display similar Pokemon
+function loadSimilarPokemon(pokemonId) {
+    const similarGrid = document.getElementById('similar-grid');
+    
+    // Show loading state while embeddings load
+    if (!embeddingsLoaded) {
+        similarGrid.innerHTML = '<div class="loading-message">Loading similarity data...</div>';
+        
+        // Check again after a short delay
+        setTimeout(() => loadSimilarPokemon(pokemonId), 500);
+        return;
+    }
+    
+    // Find similar Pokemon
+    const similarPokemon = findSimilarPokemon(pokemonId, 6);
+    
+    // Clear the grid
+    similarGrid.innerHTML = '';
+    
+    // Display each similar Pokemon
+    similarPokemon.forEach(({ id, similarity }) => {
+        const pokemon = pokemonData.find(p => parseInt(p.ID) === id);
+        if (!pokemon) return;
+        
+        const paddedId = pokemon.ID.padStart(4, '0');
+        const similarityPercent = Math.round(similarity * 100);
+        
+        const similarCard = document.createElement('div');
+        similarCard.className = 'similar-card';
+        similarCard.innerHTML = `
+            <img src="pokemon_artwork/${paddedId}.png" alt="${pokemon.Name}" loading="lazy">
+            <div class="similar-name">${pokemon.Name}</div>
+            <div class="similarity-score">${similarityPercent}% similar</div>
+        `;
+        
+        // Make it clickable to view that Pokemon
+        similarCard.addEventListener('click', () => {
+            showPokemonDetail(pokemon);
+        });
+        
+        similarGrid.appendChild(similarCard);
     });
 }
 
