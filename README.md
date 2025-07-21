@@ -48,34 +48,50 @@ python3 serve.py
 This project includes experiments with generating CLIP embeddings for Pokemon images using Daft.
 
 ### Key Findings
-- ✅ Successfully generates CLIP embeddings for datasets up to 406 images (with original code)
-- ✅ Can process 407+ images with lazy loading and CPU-only inference
-- ❌ Still fails at higher image counts (exact threshold TBD)
+- ✅ Successfully processes all 1025 Pokemon images with thread-safe model loading
+- ❌ Original code failed due to race conditions when Daft created multiple UDF instances
 
-### The Fix
-The meta tensor error can be avoided by:
-1. Moving imports to module level
-2. Using lazy model loading in the UDF's `__call__` method
-3. Keeping the model on CPU (avoiding device transfers that trigger meta tensor issues)
+### The Root Cause
+When processing larger datasets, Daft creates multiple UDF instances for parallel processing. If these instances try to load the CLIP model simultaneously, it causes race conditions in the transformers library, resulting in "meta tensor" errors.
 
-With these changes, the script can process at least 407 images successfully.
+### The Solution
+The fix uses thread-safe model loading with a global cache:
+1. **Single model per process**: Only one model is loaded regardless of UDF instances
+2. **Thread-safe loading**: Uses threading.Lock() to prevent simultaneous loads
+3. **Process-aware cache**: Separate cache entry per process ID for multiprocessing
 
-### Original Error (Fixed)
-When processing more than 406 images with the original code, the script failed with:
+### Complete Fix
+```python
+# Thread-safe global model cache
+_model_lock = threading.Lock()
+_model_cache = {}
+
+def get_clip_model():
+    """Thread-safe model loading."""
+    pid = os.getpid()
+    
+    if pid in _model_cache:
+        return _model_cache[pid]['model'], _model_cache[pid]['processor']
+    
+    with _model_lock:
+        # Double-check pattern
+        if pid in _model_cache:
+            return _model_cache[pid]['model'], _model_cache[pid]['processor']
+        
+        # Load model once per process
+        model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
+        processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+        model.eval()
+        
+        _model_cache[pid] = {'model': model, 'processor': processor}
+        
+    return _model_cache[pid]['model'], _model_cache[pid]['processor']
 ```
-NotImplementedError: Cannot copy out of meta tensor; no data! Please use torch.nn.Module.to_empty() instead of torch.nn.Module.to() when moving module from meta to a different device.
-```
 
-This occurred because transformers uses "meta" tensors for memory efficiency, which can't be moved to devices in Daft's worker processes.
-
-### Testing the Fix
+### Testing Results
 ```bash
-# Original code: fails at 407 images
-# Fixed code with lazy loading + CPU: works at 407 images
-python test_parquet_issue.py 407  # ✅ Works (~10 seconds)
-
-# But still fails at higher counts (exact threshold TBD)
-python test_parquet_issue.py 1025 # ❌ UDFException
+# Works with all 1025 images!
+python test_parquet_issue.py 1025  # ✅ Works (~15 seconds)
 ```
 
 

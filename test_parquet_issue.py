@@ -4,6 +4,8 @@ Reproduce the Daft write_parquet() issue with CLIP embeddings.
 Based on the original generate_embeddings_daft.py that exhibited the problem.
 """
 import sys
+import threading
+import os
 import daft
 from daft import col
 import torch
@@ -11,36 +13,52 @@ from transformers import CLIPProcessor, CLIPModel
 from PIL import Image
 import numpy as np
 
+# Thread-safe global model cache
+_model_lock = threading.Lock()
+_model_cache = {}
+
+def get_clip_model():
+    """Thread-safe model loading to prevent race conditions."""
+    pid = os.getpid()
+    
+    # Fast path - model already loaded
+    if pid in _model_cache:
+        return _model_cache[pid]['model'], _model_cache[pid]['processor']
+    
+    # Slow path - need to load model with lock
+    with _model_lock:
+        # Double-check - another thread might have loaded it
+        if pid in _model_cache:
+            return _model_cache[pid]['model'], _model_cache[pid]['processor']
+        
+        # Load model once per process
+        model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
+        processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+        model.eval()
+        
+        _model_cache[pid] = {
+            'model': model,
+            'processor': processor
+        }
+        
+    return _model_cache[pid]['model'], _model_cache[pid]['processor']
+
 @daft.udf(return_dtype=daft.DataType.embedding(daft.DataType.float32(), 512))
 class CLIPImageEncoder:
     def __init__(self):
-        self.model = None
-        self.processor = None
-        self.device = None
+        pass
     
     def __call__(self, images):
-        # Lazy load the model in the worker process
-        if self.model is None:
-            self.device = "cuda" if torch.cuda.is_available() else "cpu"
-            # Try loading model without any device operations
-            import os
-            os.environ["TRANSFORMERS_NO_ADVISORY_WARNINGS"] = "1"
-            
-            self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
-            self.model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
-            # Don't move to device - keep on CPU to avoid meta tensor issues
-            self.model.eval()
-        
+        model, processor = get_clip_model()
         embeddings = []
         
         for img_array in images.to_pylist():
             pil_image = Image.fromarray(img_array)
             
-            inputs = self.processor(images=pil_image, return_tensors="pt")
-            # Keep everything on CPU to avoid device issues
+            inputs = processor(images=pil_image, return_tensors="pt")
             
             with torch.no_grad():
-                image_features = self.model.get_image_features(**inputs)
+                image_features = model.get_image_features(**inputs)
                 image_features = image_features / image_features.norm(dim=-1, keepdim=True)
                 embedding = image_features.cpu().numpy().squeeze()
             
