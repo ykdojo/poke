@@ -14,20 +14,30 @@ import numpy as np
 @daft.udf(return_dtype=daft.DataType.embedding(daft.DataType.float32(), 512))
 class CLIPImageEncoder:
     def __init__(self):
-        self.model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
-        self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.model.to(self.device)
-        self.model.eval()
+        self.model = None
+        self.processor = None
+        self.device = None
     
     def __call__(self, images):
+        # Lazy load the model in the worker process
+        if self.model is None:
+            self.device = "cuda" if torch.cuda.is_available() else "cpu"
+            # Try loading model without any device operations
+            import os
+            os.environ["TRANSFORMERS_NO_ADVISORY_WARNINGS"] = "1"
+            
+            self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+            self.model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
+            # Don't move to device - keep on CPU to avoid meta tensor issues
+            self.model.eval()
+        
         embeddings = []
         
         for img_array in images.to_pylist():
             pil_image = Image.fromarray(img_array)
             
             inputs = self.processor(images=pil_image, return_tensors="pt")
-            inputs = {k: v.to(self.device) for k, v in inputs.items()}
+            # Keep everything on CPU to avoid device issues
             
             with torch.no_grad():
                 image_features = self.model.get_image_features(**inputs)

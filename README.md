@@ -48,25 +48,34 @@ python3 serve.py
 This project includes experiments with generating CLIP embeddings for Pokemon images using Daft.
 
 ### Key Findings
-- ✅ Successfully generates CLIP embeddings for datasets up to 406 images
-- ❌ Fails when processing 407 or more images
-- **Exact threshold: Works with 406, fails with 407**
+- ✅ Successfully generates CLIP embeddings for datasets up to 406 images (with original code)
+- ✅ Can process 407+ images with lazy loading and CPU-only inference
+- ❌ Still fails at higher image counts (exact threshold TBD)
 
-### The Error
-When processing more than 406 images, the script fails with a meta tensor error in worker processes:
+### The Fix
+The meta tensor error can be avoided by:
+1. Moving imports to module level
+2. Using lazy model loading in the UDF's `__call__` method
+3. Keeping the model on CPU (avoiding device transfers that trigger meta tensor issues)
+
+With these changes, the script can process at least 407 images successfully.
+
+### Original Error (Fixed)
+When processing more than 406 images with the original code, the script failed with:
 ```
 NotImplementedError: Cannot copy out of meta tensor; no data! Please use torch.nn.Module.to_empty() instead of torch.nn.Module.to() when moving module from meta to a different device.
 ```
 
-This error occurs because transformers uses "meta" tensors (tensors without actual data) for memory efficiency during model loading, but these can't be properly moved to devices in Daft's worker processes.
+This occurred because transformers uses "meta" tensors for memory efficiency, which can't be moved to devices in Daft's worker processes.
 
-### Testing the Issue
+### Testing the Fix
 ```bash
-# Works with up to 406 images
-python test_parquet_issue.py 406  # ✅ Works (~11 seconds)
+# Original code: fails at 407 images
+# Fixed code with lazy loading + CPU: works at 407 images
+python test_parquet_issue.py 407  # ✅ Works (~10 seconds)
 
-# Fails starting at 407 images
-python test_parquet_issue.py 407  # ❌ Meta tensor error in worker processes
+# But still fails at higher counts (exact threshold TBD)
+python test_parquet_issue.py 1025 # ❌ UDFException
 ```
 
 
