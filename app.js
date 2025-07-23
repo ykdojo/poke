@@ -40,28 +40,48 @@ const generationBoundaries = [
     { gen: 9, start: 906, end: 1025, name: 'Paldea' }
 ];
 
-// Display Pokemon in grid
-function displayPokemon() {
+// Display Pokemon in grid with optional search filter
+function displayPokemon(searchTerm = '') {
     const grid = document.getElementById('pokemon-grid');
     grid.innerHTML = '';
     
     let currentGen = 1;
     
-    pokemonData.forEach((pokemon, index) => {
+    // Filter Pokemon based on search term (case-insensitive partial matching)
+    const filteredPokemon = searchTerm 
+        ? pokemonData.filter(pokemon => 
+            pokemon.Name.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+        : pokemonData;
+    
+    // If no Pokemon found, show a message
+    if (filteredPokemon.length === 0) {
+        const noResults = document.createElement('div');
+        noResults.className = 'no-results';
+        noResults.textContent = `No Pokémon found matching "${searchTerm}"`;
+        grid.appendChild(noResults);
+        return;
+    }
+    
+    filteredPokemon.forEach((pokemon, index) => {
         const pokemonId = parseInt(pokemon.ID);
+        const originalIndex = pokemonData.indexOf(pokemon);
         
-        // Check if we need to add a generation separator
-        const genBoundary = generationBoundaries.find(g => g.start === pokemonId);
-        if (genBoundary) {
-            const separator = document.createElement('div');
-            separator.className = 'generation-separator';
-            separator.innerHTML = `<span>Generation ${genBoundary.gen} - ${genBoundary.name}</span>`;
-            grid.appendChild(separator);
-            currentGen = genBoundary.gen;
+        // Only show generation separator if we're showing all Pokemon
+        if (!searchTerm) {
+            // Check if we need to add a generation separator
+            const genBoundary = generationBoundaries.find(g => g.start === pokemonId);
+            if (genBoundary) {
+                const separator = document.createElement('div');
+                separator.className = 'generation-separator';
+                separator.innerHTML = `<span>Generation ${genBoundary.gen} - ${genBoundary.name}</span>`;
+                grid.appendChild(separator);
+                currentGen = genBoundary.gen;
+            }
         }
         
         const card = createPokemonCard(pokemon);
-        card.setAttribute('data-index', index);
+        card.setAttribute('data-index', originalIndex);
         card.setAttribute('data-generation', currentGen);
         grid.appendChild(card);
     });
@@ -429,5 +449,40 @@ function initializeMinimap() {
     updateViewport();
 }
 
+// Search functionality
+function performSearch() {
+    const searchInput = document.getElementById('search-input');
+    const searchTerm = searchInput.value.trim();
+    displayPokemon(searchTerm);
+    
+    // Update the URL to reflect the search (optional)
+    if (searchTerm) {
+        window.history.replaceState({}, '', `?search=${encodeURIComponent(searchTerm)}`);
+    } else {
+        window.history.replaceState({}, '', window.location.pathname);
+    }
+}
+
 // Initialize when page loads
-document.addEventListener('DOMContentLoaded', loadPokemonData);
+document.addEventListener('DOMContentLoaded', () => {
+    loadPokemonData();
+    
+    // Set up search functionality
+    const searchButton = document.getElementById('search-button');
+    const searchInput = document.getElementById('search-input');
+    
+    // Search when button is clicked
+    searchButton.addEventListener('click', performSearch);
+    
+    // Search when Enter key is pressed
+    searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            performSearch();
+        }
+    });
+    
+    // Optional: Live search as user types (uncomment if you want this)
+    // searchInput.addEventListener('input', () => {
+    //     performSearch();
+    // });
+});
