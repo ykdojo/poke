@@ -1,4 +1,5 @@
 let pokemonData = [];
+let filteredPokemonData = [];
 
 // Load Pokemon data
 async function loadPokemonData() {
@@ -6,7 +7,9 @@ async function loadPokemonData() {
         const response = await fetch('pokemon_data.csv');
         const csvText = await response.text();
         pokemonData = parseCSV(csvText);
+        filteredPokemonData = [...pokemonData];
         displayPokemon();
+        setupSearch();
     } catch (error) {
         console.error('Error loading Pokemon data:', error);
     }
@@ -47,7 +50,7 @@ function displayPokemon() {
     
     let currentGen = 1;
     
-    pokemonData.forEach((pokemon, index) => {
+    filteredPokemonData.forEach((pokemon, index) => {
         const pokemonId = parseInt(pokemon.ID);
         
         // Check if we need to add a generation separator
@@ -129,6 +132,7 @@ function showPokemonDetail(pokemon) {
                 <img src="pokemon_artwork/${paddedId}.png" alt="${pokemon.Name}" class="detail-image">
                 <div class="detail-info">
                     <h2>${pokemon.Name}${formDisplay}</h2>
+                    <div class="pokemon-number">#${pokemon.ID.padStart(3, '0')}</div>
                     <div class="detail-types">
                         ${type1Badge}
                         ${type2Badge}
@@ -427,6 +431,34 @@ function initializeMinimap() {
         updateViewport();
     });
     updateViewport();
+}
+
+// Setup search functionality
+function setupSearch() {
+    const searchInput = document.getElementById('search-input');
+    const searchButton = document.getElementById('search-button');
+    
+    function performSearch() {
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        
+        if (searchTerm === '') {
+            filteredPokemonData = [...pokemonData];
+        } else {
+            filteredPokemonData = pokemonData.filter(pokemon => 
+                pokemon.Name.toLowerCase().includes(searchTerm)
+            );
+        }
+        
+        displayPokemon();
+    }
+    
+    searchButton.addEventListener('click', performSearch);
+    
+    searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            performSearch();
+        }
+    });
 }
 
 // Initialize when page loads
