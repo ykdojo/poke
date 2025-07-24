@@ -41,18 +41,19 @@ const generationBoundaries = [
 ];
 
 // Display Pokemon in grid
-function displayPokemon() {
+function displayPokemon(filteredData = null) {
     const grid = document.getElementById('pokemon-grid');
     grid.innerHTML = '';
     
     let currentGen = 1;
+    const dataToDisplay = filteredData || pokemonData;
     
-    pokemonData.forEach((pokemon, index) => {
+    dataToDisplay.forEach((pokemon, index) => {
         const pokemonId = parseInt(pokemon.ID);
         
         // Check if we need to add a generation separator
         const genBoundary = generationBoundaries.find(g => g.start === pokemonId);
-        if (genBoundary) {
+        if (genBoundary && !filteredData) {
             const separator = document.createElement('div');
             separator.className = 'generation-separator';
             separator.innerHTML = `<span>Generation ${genBoundary.gen} - ${genBoundary.name}</span>`;
@@ -61,7 +62,7 @@ function displayPokemon() {
         }
         
         const card = createPokemonCard(pokemon);
-        card.setAttribute('data-index', index);
+        card.setAttribute('data-index', filteredData ? pokemonData.indexOf(pokemon) : index);
         card.setAttribute('data-generation', currentGen);
         grid.appendChild(card);
     });
@@ -429,5 +430,38 @@ function initializeMinimap() {
     updateViewport();
 }
 
+// Search functionality
+function searchPokemon() {
+    const searchInput = document.getElementById('search-input');
+    const searchTerm = searchInput.value.toLowerCase().trim();
+    
+    if (searchTerm === '') {
+        displayPokemon();
+        return;
+    }
+    
+    const filteredPokemon = pokemonData.filter(pokemon => {
+        return pokemon.Name.toLowerCase().includes(searchTerm) ||
+               pokemon.Type1.toLowerCase().includes(searchTerm) ||
+               (pokemon.Type2 && pokemon.Type2.toLowerCase().includes(searchTerm)) ||
+               pokemon.ID.toString().includes(searchTerm);
+    });
+    
+    displayPokemon(filteredPokemon);
+}
+
 // Initialize when page loads
-document.addEventListener('DOMContentLoaded', loadPokemonData);
+document.addEventListener('DOMContentLoaded', () => {
+    loadPokemonData();
+    
+    // Setup search event listeners
+    const searchButton = document.getElementById('search-button');
+    const searchInput = document.getElementById('search-input');
+    
+    searchButton.addEventListener('click', searchPokemon);
+    searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            searchPokemon();
+        }
+    });
+});
