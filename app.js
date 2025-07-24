@@ -162,6 +162,7 @@ function showPokemonDetail(pokemon) {
                 </div>
             </div>
             
+            <!-- Similarity feature temporarily disabled
             <div class="similar-section">
                 <h3>Visually Similar Pokemon</h3>
                 <p class="similarity-note">Based on artwork appearance only - not stats, types, or abilities</p>
@@ -169,13 +170,14 @@ function showPokemonDetail(pokemon) {
                     <!-- Similar Pokemon will be populated here -->
                 </div>
             </div>
+            -->
         </div>
     `;
     
     detailView.classList.remove('hidden');
     
-    // Load similar Pokemon
-    loadSimilarPokemon(parseInt(pokemon.ID));
+    // Load similar Pokemon - temporarily disabled
+    // loadSimilarPokemon(parseInt(pokemon.ID));
     
     // Close on background click
     detailView.addEventListener('click', (e) => {
