@@ -1,4 +1,5 @@
 let pokemonData = [];
+let filteredPokemonData = [];
 
 // Load Pokemon data
 async function loadPokemonData() {
@@ -6,7 +7,9 @@ async function loadPokemonData() {
         const response = await fetch('pokemon_data.csv');
         const csvText = await response.text();
         pokemonData = parseCSV(csvText);
+        filteredPokemonData = [...pokemonData];
         displayPokemon();
+        initializeSearch();
     } catch (error) {
         console.error('Error loading Pokemon data:', error);
     }
@@ -47,7 +50,7 @@ function displayPokemon() {
     
     let currentGen = 1;
     
-    pokemonData.forEach((pokemon, index) => {
+    filteredPokemonData.forEach((pokemon, index) => {
         const pokemonId = parseInt(pokemon.ID);
         
         // Check if we need to add a generation separator
@@ -61,7 +64,8 @@ function displayPokemon() {
         }
         
         const card = createPokemonCard(pokemon);
-        card.setAttribute('data-index', index);
+        const originalIndex = pokemonData.findIndex(p => p.ID === pokemon.ID && p.Name === pokemon.Name && p.Form === pokemon.Form);
+        card.setAttribute('data-index', originalIndex);
         card.setAttribute('data-generation', currentGen);
         grid.appendChild(card);
     });
@@ -430,4 +434,50 @@ function initializeMinimap() {
 }
 
 // Initialize when page loads
+// Initialize search functionality
+function initializeSearch() {
+    const searchInput = document.getElementById('search-input');
+    const searchButton = document.getElementById('search-button');
+    const clearButton = document.getElementById('clear-button');
+    
+    // Search function
+    function performSearch() {
+        const searchTerm = searchInput.value.trim().toLowerCase();
+        
+        if (searchTerm === '') {
+            filteredPokemonData = [...pokemonData];
+        } else {
+            filteredPokemonData = pokemonData.filter(pokemon => {
+                // 名前、タイプ、フォームで検索
+                const nameMatch = pokemon.Name.toLowerCase().includes(searchTerm);
+                const type1Match = pokemon.Type1.toLowerCase().includes(searchTerm);
+                const type2Match = pokemon.Type2 && pokemon.Type2.toLowerCase().includes(searchTerm);
+                const formMatch = pokemon.Form && pokemon.Form.toLowerCase().includes(searchTerm);
+                
+                return nameMatch || type1Match || type2Match || formMatch;
+            });
+        }
+        
+        displayPokemon();
+    }
+    
+    // Clear search
+    function clearSearch() {
+        searchInput.value = '';
+        filteredPokemonData = [...pokemonData];
+        displayPokemon();
+    }
+    
+    // Event listeners
+    searchButton.addEventListener('click', performSearch);
+    clearButton.addEventListener('click', clearSearch);
+    
+    // Enterキーでも検索可能に
+    searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            performSearch();
+        }
+    });
+}
+
 document.addEventListener('DOMContentLoaded', loadPokemonData);
