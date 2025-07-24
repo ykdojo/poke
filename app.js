@@ -7,6 +7,7 @@ async function loadPokemonData() {
         const csvText = await response.text();
         pokemonData = parseCSV(csvText);
         displayPokemon();
+        setupSearch();
     } catch (error) {
         console.error('Error loading Pokemon data:', error);
     }
@@ -427,6 +428,58 @@ function initializeMinimap() {
         updateViewport();
     });
     updateViewport();
+}
+
+// Setup search functionality
+function setupSearch() {
+    const searchInput = document.getElementById('search-input');
+    const searchButton = document.getElementById('search-button');
+    
+    searchButton.addEventListener('click', performSearch);
+    searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            performSearch();
+        }
+    });
+}
+
+// Perform search
+function performSearch() {
+    const searchInput = document.getElementById('search-input');
+    const searchTerm = searchInput.value.toLowerCase().trim();
+    
+    if (!searchTerm) {
+        displayPokemon();
+        return;
+    }
+    
+    const filteredPokemon = pokemonData.filter(pokemon => {
+        return pokemon.Name.toLowerCase().includes(searchTerm) ||
+               pokemon.Type1.toLowerCase().includes(searchTerm) ||
+               (pokemon.Type2 && pokemon.Type2.toLowerCase().includes(searchTerm));
+    });
+    
+    displayFilteredPokemon(filteredPokemon);
+}
+
+// Display filtered Pokemon
+function displayFilteredPokemon(filteredData) {
+    const grid = document.getElementById('pokemon-grid');
+    grid.innerHTML = '';
+    
+    if (filteredData.length === 0) {
+        grid.innerHTML = '<div class="no-results">No Pokemon found</div>';
+        return;
+    }
+    
+    filteredData.forEach((pokemon, index) => {
+        const card = createPokemonCard(pokemon);
+        card.setAttribute('data-index', pokemonData.indexOf(pokemon));
+        grid.appendChild(card);
+    });
+    
+    // Reinitialize minimap
+    initializeMinimap();
 }
 
 // Initialize when page loads

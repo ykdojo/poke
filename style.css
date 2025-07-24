@@ -29,6 +29,56 @@ body {
     z-index: 2;
 }
 
+/* Search container */
+.search-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.search-input {
+    width: 300px;
+    padding: 10px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 25px;
+    font-size: 16px;
+    outline: none;
+    transition: border-color 0.3s;
+}
+
+.search-input:focus {
+    border-color: #ffcb05;
+}
+
+.search-button {
+    padding: 10px 25px;
+    background-color: #ffcb05;
+    color: #222;
+    border: none;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    text-shadow: 1px 1px 0px rgba(255, 255, 255, 0.3);
+}
+
+.search-button:hover {
+    background-color: #fdb305;
+}
+
+.no-results {
+    text-align: center;
+    padding: 50px;
+    font-size: 18px;
+    color: #666;
+}
+
 .pokemon-title {
     text-align: center;
     margin: 0;
