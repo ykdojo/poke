@@ -1,4 +1,5 @@
 let pokemonData = [];
+let filteredPokemonData = [];
 
 // Load Pokemon data
 async function loadPokemonData() {
@@ -6,7 +7,9 @@ async function loadPokemonData() {
         const response = await fetch('pokemon_data.csv');
         const csvText = await response.text();
         pokemonData = parseCSV(csvText);
+        filteredPokemonData = [...pokemonData];
         displayPokemon();
+        initializeSearch();
     } catch (error) {
         console.error('Error loading Pokemon data:', error);
     }
@@ -47,7 +50,7 @@ function displayPokemon() {
     
     let currentGen = 1;
     
-    pokemonData.forEach((pokemon, index) => {
+    filteredPokemonData.forEach((pokemon, index) => {
         const pokemonId = parseInt(pokemon.ID);
         
         // Check if we need to add a generation separator
@@ -427,6 +430,49 @@ function initializeMinimap() {
         updateViewport();
     });
     updateViewport();
+}
+
+// Initialize search functionality
+function initializeSearch() {
+    const searchInput = document.getElementById('search-input');
+    const searchButton = document.getElementById('search-button');
+    
+    // Search function
+    function performSearch() {
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        
+        if (searchTerm === '') {
+            // If search is empty, show all Pokemon
+            filteredPokemonData = [...pokemonData];
+        } else {
+            // Filter Pokemon by name
+            filteredPokemonData = pokemonData.filter(pokemon => {
+                const pokemonName = pokemon.Name.toLowerCase();
+                const pokemonForm = pokemon.Form ? pokemon.Form.toLowerCase() : '';
+                return pokemonName.includes(searchTerm) || pokemonForm.includes(searchTerm);
+            });
+        }
+        
+        // Re-display Pokemon with filtered data
+        displayPokemon();
+    }
+    
+    // Add event listeners
+    searchButton.addEventListener('click', performSearch);
+    
+    // Allow search on Enter key
+    searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            performSearch();
+        }
+    });
+    
+    // Optional: Live search as user types (with debouncing)
+    let searchTimeout;
+    searchInput.addEventListener('input', () => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(performSearch, 300);
+    });
 }
 
 // Initialize when page loads
