@@ -429,5 +429,68 @@ function initializeMinimap() {
     updateViewport();
 }
 
+// Search functionality
+function initializeSearch() {
+    const searchInput = document.getElementById('search-input');
+    const searchButton = document.getElementById('search-button');
+    const clearButton = document.getElementById('clear-button');
+    
+    function performSearch() {
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        
+        if (searchTerm === '') {
+            displayPokemon();
+            return;
+        }
+        
+        const filteredPokemon = pokemonData.filter(pokemon => {
+            const name = pokemon.Name.toLowerCase();
+            return name.includes(searchTerm);
+        });
+        
+        displayFilteredPokemon(filteredPokemon);
+    }
+    
+    function clearSearch() {
+        searchInput.value = '';
+        displayPokemon();
+    }
+    
+    // Event listeners
+    searchButton.addEventListener('click', performSearch);
+    clearButton.addEventListener('click', clearSearch);
+    
+    // Search on Enter key
+    searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            performSearch();
+        }
+    });
+}
+
+// Display filtered Pokemon
+function displayFilteredPokemon(filteredPokemon) {
+    const grid = document.getElementById('pokemon-grid');
+    grid.innerHTML = '';
+    
+    if (filteredPokemon.length === 0) {
+        grid.innerHTML = '<div class="no-results">ポケモンが見つかりませんでした</div>';
+        return;
+    }
+    
+    filteredPokemon.forEach((pokemon, index) => {
+        const card = createPokemonCard(pokemon);
+        const originalIndex = pokemonData.findIndex(p => p.ID === pokemon.ID);
+        card.setAttribute('data-index', originalIndex);
+        grid.appendChild(card);
+    });
+    
+    // Update minimap after filtering
+    initializeMinimap();
+}
+
 // Initialize when page loads
-document.addEventListener('DOMContentLoaded', loadPokemonData);
+document.addEventListener('DOMContentLoaded', () => {
+    loadPokemonData();
+    initializeSearch();
+});
