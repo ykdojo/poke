@@ -40,31 +40,56 @@ const generationBoundaries = [
     { gen: 9, start: 906, end: 1025, name: 'Paldea' }
 ];
 
-// Display Pokemon in grid
-function displayPokemon() {
+// Display Pokemon in grid (with optional filter)
+function displayPokemon(searchQuery = '') {
     const grid = document.getElementById('pokemon-grid');
     grid.innerHTML = '';
     
     let currentGen = 1;
     
-    pokemonData.forEach((pokemon, index) => {
-        const pokemonId = parseInt(pokemon.ID);
-        
-        // Check if we need to add a generation separator
-        const genBoundary = generationBoundaries.find(g => g.start === pokemonId);
-        if (genBoundary) {
-            const separator = document.createElement('div');
-            separator.className = 'generation-separator';
-            separator.innerHTML = `<span>Generation ${genBoundary.gen} - ${genBoundary.name}</span>`;
-            grid.appendChild(separator);
-            currentGen = genBoundary.gen;
-        }
-        
-        const card = createPokemonCard(pokemon);
-        card.setAttribute('data-index', index);
-        card.setAttribute('data-generation', currentGen);
-        grid.appendChild(card);
-    });
+    // Filter pokemon if search query exists
+    const filteredPokemon = searchQuery 
+        ? pokemonData.filter(pokemon => {
+            const nameMatch = pokemon.Name && pokemon.Name.toLowerCase().includes(searchQuery.toLowerCase());
+            const formMatch = pokemon.Form && pokemon.Form.toLowerCase().includes(searchQuery.toLowerCase());
+            return nameMatch || formMatch;
+          })
+        : pokemonData;
+    
+    console.log('Filtered results:', filteredPokemon.length);
+    
+    if (filteredPokemon.length === 0) {
+        const noResults = document.createElement('div');
+        noResults.className = 'no-results';
+        noResults.innerHTML = `
+            <p>「${searchQuery}」に一致するポケモンが見つかりませんでした。</p>
+            <p>別の名前で検索してみてください。</p>
+        `;
+        grid.appendChild(noResults);
+    } else {
+        filteredPokemon.forEach((pokemon) => {
+            const pokemonId = parseInt(pokemon.ID);
+            
+            // Check if we need to add a generation separator (only show when no search)
+            if (!searchQuery) {
+                const genBoundary = generationBoundaries.find(g => g.start === pokemonId);
+                if (genBoundary) {
+                    const separator = document.createElement('div');
+                    separator.className = 'generation-separator';
+                    separator.innerHTML = `<span>Generation ${genBoundary.gen} - ${genBoundary.name}</span>`;
+                    grid.appendChild(separator);
+                    currentGen = genBoundary.gen;
+                }
+            }
+            
+            const card = createPokemonCard(pokemon);
+            // Find the original index in pokemonData
+            const originalIndex = pokemonData.findIndex(p => p.ID === pokemon.ID);
+            card.setAttribute('data-index', originalIndex);
+            card.setAttribute('data-generation', currentGen);
+            grid.appendChild(card);
+        });
+    }
     
     // Initialize minimap after displaying Pokemon
     initializeMinimap();
@@ -429,5 +454,38 @@ function initializeMinimap() {
     updateViewport();
 }
 
+// Initialize search functionality
+function initializeSearch() {
+    const searchInput = document.getElementById('search-input');
+    const searchButton = document.getElementById('search-button');
+    const clearButton = document.getElementById('clear-button');
+    
+    // Search function
+    const performSearch = () => {
+        const searchQuery = searchInput.value.trim();
+        console.log('Searching for:', searchQuery);
+        console.log('Total Pokemon data:', pokemonData.length);
+        displayPokemon(searchQuery);
+    };
+    
+    // Clear search
+    const clearSearch = () => {
+        searchInput.value = '';
+        displayPokemon();
+    };
+    
+    // Event listeners
+    searchButton.addEventListener('click', performSearch);
+    searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            performSearch();
+        }
+    });
+    clearButton.addEventListener('click', clearSearch);
+}
+
 // Initialize when page loads
-document.addEventListener('DOMContentLoaded', loadPokemonData);
+document.addEventListener('DOMContentLoaded', () => {
+    loadPokemonData();
+    initializeSearch();
+});
