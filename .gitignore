@@ -14,3 +14,13 @@ env/
 
 # Test files
 # test_*.py  # Commented out - we want to track test files
+
+# Lance datasets
+*.lance/
+youtube.lance/
+test_simple_blobs.lance/
+test_strings.lance/
+
+# Downloaded/generated media files
+*.mp4
+sample_video.mp4
