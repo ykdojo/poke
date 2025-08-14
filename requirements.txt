@@ -1,6 +1,8 @@
 daft
+pylance
 transformers
 torch
 torchvision
 pillow
 numpy
+pyarrow
